@@ -14,7 +14,86 @@
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);transition:background .3s,color .3s;-webkit-text-size-adjust:100%}
 h1,h2,h3,h4{font-family:'Syne',sans-serif}
 
-/* ── TOPBAR ── */
+/* ── LOGIN SCREEN ── */
+#loginScreen{
+  position:fixed;inset:0;z-index:999;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+  transition:opacity .3s;
+}
+#loginScreen.hide{opacity:0;pointer-events:none}
+.login-box{
+  background:var(--s);border:1px solid var(--b);border-radius:20px;
+  padding:36px 32px;width:100%;max-width:380px;
+  box-shadow:0 8px 40px rgba(0,0,0,.10);
+}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.login-star{font-size:28px;color:var(--star)}
+.login-brand{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.5px}
+.login-brand span{color:var(--star)}
+.login-sub{font-size:11px;color:var(--t2);margin-top:-3px}
+.login-field{margin-bottom:14px}
+.login-label{display:block;font-size:11px;font-weight:500;color:var(--t2);margin-bottom:5px}
+.login-input{
+  width:100%;padding:10px 13px;border-radius:var(--rs);
+  border:1px solid var(--b);background:var(--s2);
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--t);
+  outline:none;transition:border-color .15s;
+}
+.login-input:focus{border-color:var(--star)}
+.login-btn-main{
+  width:100%;padding:11px;border-radius:var(--rs);border:none;
+  background:var(--t);color:var(--bg);
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;transition:opacity .15s;margin-top:6px;
+  letter-spacing:.3px;
+}
+.login-btn-main:hover{opacity:.85}
+.login-btn-main:active{transform:scale(.98)}
+.login-error{
+  font-size:12px;color:#e03e3e;margin-top:10px;
+  min-height:18px;text-align:center;
+}
+.login-forgot{
+  display:block;text-align:center;font-size:12px;
+  color:var(--t2);margin-top:16px;cursor:pointer;
+  background:none;border:none;font-family:'DM Sans',sans-serif;
+  text-decoration:underline;text-underline-offset:3px;
+  transition:color .15s;
+}
+.login-forgot:hover{color:var(--star)}
+/* forgot modal */
+.forgot-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,.5);
+  display:none;align-items:center;justify-content:center;padding:24px;
+}
+.forgot-overlay.open{display:flex}
+.forgot-box{
+  background:var(--s);border-radius:16px;
+  padding:28px 28px;width:100%;max-width:360px;
+  box-shadow:0 8px 40px rgba(0,0,0,.18);
+}
+.forgot-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:8px}
+.forgot-desc{font-size:12px;color:var(--t2);margin-bottom:18px;line-height:1.5}
+.forgot-sent{font-size:13px;color:#2ea05a;margin-top:10px;min-height:20px;text-align:center}
+.forgot-actions{display:flex;gap:8px;margin-top:18px}
+.forgot-cancel{
+  flex:1;padding:9px;border-radius:var(--rs);
+  border:1px solid var(--b);background:var(--s2);color:var(--t);
+  font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;
+}
+.forgot-send{
+  flex:1;padding:9px;border-radius:var(--rs);
+  border:none;background:var(--star);color:#111;
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;
+}
+.forgot-send:hover{opacity:.88}
+/* logout button in topbar */
+#logoutBtn{display:none}
+
+
 .topbar{background:var(--s);border-bottom:1px solid var(--b);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
 .brand{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:-.5px}
 .brand span{color:var(--star)}
@@ -121,6 +200,7 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif}
     <button class="btn" onclick="exportData()">↑ <span class="btn-lbl">Exportar</span></button>
     <button class="btn bg" onclick="openModal()">≡ <span class="btn-lbl">Ranking IBOPE</span></button>
     <button class="btn" onclick="toggleDark()" id="dkBtn">🌙</button>
+    <button class="btn" id="logoutBtn" onclick="doLogout()" title="Sair">⎋ <span class="btn-lbl">Sair</span></button>
   </div>
 </header>
 
@@ -586,7 +666,90 @@ function exportData(){
 let resizeTimer;
 window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>render(),220)});
 
-render();
+/* ── LOGIN ── */
+const CREDS={user:"admin",pass:"dashredes"};
+
+function doLogin(){
+  const u=document.getElementById("liUser").value.trim();
+  const p=document.getElementById("liPass").value;
+  const err=document.getElementById("liErr");
+  if(u===CREDS.user&&p===CREDS.pass){
+    err.textContent="";
+    const scr=document.getElementById("loginScreen");
+    scr.classList.add("hide");
+    document.getElementById("logoutBtn").style.display="flex";
+    setTimeout(()=>{scr.style.display="none";render();},300);
+  } else {
+    err.textContent="Usuário ou senha incorretos.";
+    document.getElementById("liPass").value="";
+    document.getElementById("liPass").focus();
+  }
+}
+
+function doLogout(){
+  document.getElementById("loginScreen").style.display="flex";
+  setTimeout(()=>document.getElementById("loginScreen").classList.remove("hide"),10);
+  document.getElementById("logoutBtn").style.display="none";
+  document.getElementById("liUser").value="";
+  document.getElementById("liPass").value="";
+  document.getElementById("liErr").textContent="";
+}
+
+function openForgot(){document.getElementById("forgotOverlay").classList.add("open");document.getElementById("forgotSent").textContent=""}
+function closeForgot(){document.getElementById("forgotOverlay").classList.remove("open")}
+
+function sendForgot(){
+  // Opens the user's default mail client with a pre-filled reset email
+  const to="alexandre.vodopives@gmail.com";
+  const subject=encodeURIComponent("Redefinição de senha — Dashboard Botafogo");
+  const body=encodeURIComponent(
+    "Olá,\n\nRecebemos uma solicitação de redefinição de senha para o Dashboard de Redes Sociais do Botafogo.\n\nSe você fez essa solicitação, utilize as credenciais abaixo ou entre em contato com o administrador.\n\nLogin: admin\nSenha: dashredes\n\nSe não foi você, ignore este e-mail.\n\nAtenciosamente,\nDashboard Botafogo"
+  );
+  window.location.href=`mailto:${to}?subject=${subject}&body=${body}`;
+  document.getElementById("forgotSent").textContent="✓ E-mail de redefinição enviado para alexandre.vodopives@gmail.com";
+}
+
+// Allow Enter key on login fields
+document.getElementById("liUser").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("liPass").focus()});
+document.getElementById("liPass").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin()});
+
 </script>
+<!-- ── LOGIN SCREEN ── -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-star">★</div>
+      <div>
+        <div class="login-brand">BOTA<span>FOGO</span></div>
+        <div class="login-sub">Dashboard Redes Sociais</div>
+      </div>
+    </div>
+    <div class="login-field">
+      <label class="login-label" for="liUser">Usuário</label>
+      <input class="login-input" id="liUser" type="text" placeholder="Digite seu usuário" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label class="login-label" for="liPass">Senha</label>
+      <input class="login-input" id="liPass" type="password" placeholder="Digite sua senha" autocomplete="current-password">
+    </div>
+    <button class="login-btn-main" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="liErr"></div>
+    <button class="login-forgot" onclick="openForgot()">Esqueci minha senha</button>
+  </div>
+</div>
+
+<!-- ── FORGOT PASSWORD MODAL ── -->
+<div class="forgot-overlay" id="forgotOverlay" onclick="if(event.target===this)closeForgot()">
+  <div class="forgot-box">
+    <div class="forgot-title">Redefinir senha</div>
+    <div class="forgot-desc">Um e-mail de redefinição será enviado para o endereço do administrador do sistema.</div>
+    <div class="forgot-actions">
+      <button class="forgot-cancel" onclick="closeForgot()">Cancelar</button>
+      <button class="forgot-send" onclick="sendForgot()">Enviar e-mail</button>
+    </div>
+    <div class="forgot-sent" id="forgotSent"></div>
+  </div>
+</div>
+
 </body>
 </html>
