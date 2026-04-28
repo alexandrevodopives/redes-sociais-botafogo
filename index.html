@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Botafogo — Dashboard Redes Sociais</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f5f4f0;--s:#fff;--s2:#f0ede8;--b:rgba(0,0,0,.10);--t:#1a1916;--t2:#6b6860;--t3:#a09d98;--star:#C8A84B;--r:14px;--rs:8px}
+[data-dark]{--bg:#111110;--s:#1c1c1a;--s2:#242422;--b:rgba(255,255,255,.10);--t:#f0ede8;--t2:#a09d98;--t3:#6b6860}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);transition:background .3s,color .3s;-webkit-text-size-adjust:100%}
+h1,h2,h3,h4{font-family:'Syne',sans-serif}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--s);border-bottom:1px solid var(--b);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.brand{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:-.5px}
+.brand span{color:var(--star)}
+.brand-sub{font-size:10px;color:var(--t2);margin-top:-2px}
+.tr{display:flex;align-items:center;gap:6px}
+.btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:6px 10px;border-radius:var(--rs);border:1px solid var(--b);background:var(--s);color:var(--t);cursor:pointer;display:flex;align-items:center;gap:4px;transition:background .15s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.btn:hover{background:var(--s2)}
+.btn:active{transform:scale(.96)}
+.bg{background:var(--star);color:#111;border-color:transparent}
+.bg:hover{opacity:.9;background:var(--star)}
+.btn-lbl{display:inline}
+@media(max-width:520px){.btn-lbl{display:none}.btn{padding:6px 8px}}
+
+/* ── MAIN ── */
+.main{padding:16px;max-width:1400px;margin:0 auto}
+@media(min-width:600px){.main{padding:20px 24px}}
+
+/* ── HERO GRID ── */
+.hg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+@media(min-width:600px){.hg{grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:9px}}
+.mc{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:12px 14px}
+.mc.cb{background:var(--t);color:var(--bg);border-color:transparent;grid-column:span 3}
+@media(min-width:600px){.mc.cb{grid-column:span 1}}
+.mc.cb .ml,.mc.cb .mr,.mc.cb .md,.mc.cb .md-tooltip{color:rgba(255,255,255,.5)}
+[data-dark] .mc.cb{background:var(--star)}
+[data-dark] .mc.cb .mv{color:#111}
+[data-dark] .mc.cb .ml,[data-dark] .mc.cb .mr,[data-dark] .mc.cb .md,[data-dark] .mc.cb .md-tooltip{color:rgba(0,0,0,.55)}
+.mi{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:7px;overflow:hidden;flex-shrink:0}
+.ml{font-size:11px;color:var(--t2);font-weight:500;margin-bottom:2px}
+.mv{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;line-height:1;margin-bottom:4px}
+.mc.cb .mv{font-size:22px}
+@media(min-width:600px){.mv{font-size:20px}.mc.cb .mv{font-size:28px}}
+.mr{font-size:10px;color:var(--t2)}
+.mr b{color:var(--star);font-weight:700}
+.md{font-size:10px;color:var(--t3);margin-top:2px}
+.md-tooltip{font-size:9px;color:var(--t3);margin-top:1px;line-height:1.3}
+.du{color:#2ea05a!important}
+.dd{color:#e03e3e!important}
+
+/* ── CHART SECTION ── */
+.st{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:3px}
+.ss{font-size:11px;color:var(--t2);margin-bottom:12px}
+.cc{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:14px 14px;margin-bottom:18px}
+@media(min-width:600px){.cc{padding:16px 20px}}
+.lg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)}
+.ld{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.chart-wrap{position:relative;width:100%;height:280px}
+@media(min-width:600px){.chart-wrap{height:340px}}
+@media(min-width:900px){.chart-wrap{height:380px}}
+
+/* ── SOCIAL GRID ── */
+.sg{display:flex;flex-direction:column;gap:12px}
+@media(min-width:860px){
+  .sg{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+}
+.sg-left{display:flex;flex-direction:column;gap:12px}
+.sg-right{display:flex;flex-direction:column;gap:12px}
+.sc{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:14px 16px}
+.sh{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--b)}
+.si{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;overflow:hidden}
+.sn{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+.sf{font-size:10px;color:var(--t2)}
+
+/* ── MODAL ── */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-end;justify-content:center;padding:0}
+@media(min-width:600px){.mo{align-items:center;padding:14px}}
+.mo.open{display:flex}
+.md2{background:var(--s);width:100%;max-width:820px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;border-radius:16px 16px 0 0}
+@media(min-width:600px){.md2{border-radius:14px;max-height:88vh}}
+.mh{padding:14px 16px;border-bottom:1px solid var(--b);display:flex;flex-direction:column;gap:10px;flex-shrink:0}
+@media(min-width:520px){.mh{flex-direction:row;align-items:center;justify-content:space-between}}
+.mh h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+.mh-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.mts{display:flex;gap:4px;flex-wrap:wrap}
+.mt{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--b);background:var(--s2);color:var(--t);transition:all .15s;-webkit-tap-highlight-color:transparent}
+.mt.active{background:var(--t);color:var(--bg);border-color:transparent}
+.mb{overflow-y:auto;flex:1}
+.mb img{width:100%;display:block}
+.mc2{background:none;border:1px solid var(--b);border-radius:6px;width:30px;height:30px;cursor:pointer;color:var(--t);font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rank-empty{padding:48px 24px;text-align:center}
+.rank-empty-icon{font-size:36px;margin-bottom:12px;opacity:.4}
+.rank-empty-txt{font-size:13px;color:var(--t2);margin-bottom:16px}
+.rank-upload-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--rs);border:1.5px dashed var(--b);background:var(--s2);color:var(--t);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.rank-upload-btn:hover{border-color:var(--star);color:var(--star)}
+.rank-img-wrap{position:relative}
+.rank-img-wrap:hover .rank-change-btn{opacity:1}
+.rank-change-btn{position:absolute;bottom:12px;right:12px;opacity:0;transition:opacity .2s;padding:7px 14px;border-radius:var(--rs);background:rgba(0,0,0,.7);color:#fff;font-size:11px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px}
+@media(max-width:599px){.rank-change-btn{opacity:1}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div style="font-size:18px;color:var(--star)">★</div>
+    <div>
+      <div class="brand">BOTA<span>FOGO</span></div>
+      <div class="brand-sub">Dashboard Redes Sociais</div>
+    </div>
+  </div>
+  <div class="tr">
+    <button class="btn" onclick="document.getElementById('fi').click()">↓ <span class="btn-lbl">Importar</span></button>
+    <input type="file" id="fi" accept=".xlsx" style="display:none" onchange="importData(event)">
+    <button class="btn" onclick="exportData()">↑ <span class="btn-lbl">Exportar</span></button>
+    <button class="btn bg" onclick="openModal()">≡ <span class="btn-lbl">Ranking IBOPE</span></button>
+    <button class="btn" onclick="toggleDark()" id="dkBtn">🌙</button>
+  </div>
+</header>
+
+<main class="main" id="dashboard">
+  <div class="hg" id="hG"></div>
+
+  <div class="st">Evolução de Seguidores</div>
+  <div class="ss">Área empilhada — total acumulado por rede social ao longo dos meses</div>
+  <div class="cc">
+    <div class="lg" id="cL"></div>
+    <div class="chart-wrap"><canvas id="cC" role="img" aria-label="Evolução seguidores Botafogo"></canvas></div>
+  </div>
+
+  <div id="sS"></div>
+</main>
+
+<div class="mo" id="rM" onclick="if(event.target===this)closeModal()">
+  <div class="md2">
+    <div class="mh">
+      <h3>Ranking IBOPE Repucom — Clubes Brasileiros 2026</h3>
+      <div class="mh-row">
+        <div class="mts" id="mTs"></div>
+        <button class="btn" onclick="document.getElementById('rankImg').click()" style="padding:5px 9px;font-size:11px">📎 <span class="btn-lbl">Imagem</span></button>
+        <input type="file" id="rankImg" accept="image/*" style="display:none" onchange="uploadRankImg(event)">
+        <button class="mc2" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div class="mb" id="mB"></div>
+  </div>
+</div>
+
+<script>
+const MONTHS=["Janeiro","Fevereiro","Março","Abril"];
+const NETS=["Facebook","X","Instagram","YouTube","TikTok"];
+// Stacked area order — bottom to top
+const STACK_ORDER=["Instagram","Facebook","TikTok","X","YouTube"];
+const NCL={Facebook:"#1877F2",X:"#3a3a3a",Instagram:"#C13584",YouTube:"#FF0000",TikTok:"#888888",Combinado:"#C8A84B"};
+const NCD={Facebook:"#4a9ff5",X:"#aaaaaa",Instagram:"#e1609a",YouTube:"#ff5252",TikTok:"#d0d0d0",Combinado:"#C8A84B"};
+const NBG={Facebook:"#1877F2",X:"#3a3a3a",Instagram:"#C13584",YouTube:"#FF0000",TikTok:"#888888"};
+
+const NLOGO={
+  Facebook:`<svg viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`,
+  X:`<svg viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
+  Instagram:`<svg viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>`,
+  YouTube:`<svg viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+  TikTok:`<svg viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/></svg>`
+};
+
+function svgIcon(n,size){
+  return`<div style="width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center">${NLOGO[n]||""}</div>`;
+}
+
+const RK={Janeiro:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11},Fevereiro:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11},Março:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11},Abril:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11}};
+let RB={Janeiro:"",Fevereiro:"",Março:"",Abril:""};
+
+let DATA=[
+{r:"Facebook",m:"Janeiro",met:"Seguidores",v:1500000},{r:"X",m:"Janeiro",met:"Seguidores",v:1241546},{r:"Instagram",m:"Janeiro",met:"Seguidores",v:1964785},{r:"YouTube",m:"Janeiro",met:"Seguidores",v:675000},{r:"TikTok",m:"Janeiro",met:"Seguidores",v:1300000},
+{r:"Facebook",m:"Fevereiro",met:"Seguidores",v:1500000},{r:"X",m:"Fevereiro",met:"Seguidores",v:1242760},{r:"Instagram",m:"Fevereiro",met:"Seguidores",v:1970287},{r:"YouTube",m:"Fevereiro",met:"Seguidores",v:678000},{r:"TikTok",m:"Fevereiro",met:"Seguidores",v:1300000},
+{r:"Facebook",m:"Março",met:"Seguidores",v:1500000},{r:"X",m:"Março",met:"Seguidores",v:1243825},{r:"Instagram",m:"Março",met:"Seguidores",v:1971507},{r:"YouTube",m:"Março",met:"Seguidores",v:680000},{r:"TikTok",m:"Março",met:"Seguidores",v:1300000},
+{r:"Facebook",m:"Abril",met:"Seguidores",v:1500000},{r:"X",m:"Abril",met:"Seguidores",v:1244728},{r:"Instagram",m:"Abril",met:"Seguidores",v:1983167},{r:"YouTube",m:"Abril",met:"Seguidores",v:684000},{r:"TikTok",m:"Abril",met:"Seguidores",v:1300000},
+{r:"Instagram",m:"Janeiro",met:"Contas alcançadas",v:9881024},{r:"Instagram",m:"Janeiro",met:"Interações",v:6760268},
+{r:"Instagram",m:"Fevereiro",met:"Contas alcançadas",v:6721088},{r:"Instagram",m:"Fevereiro",met:"Interações",v:5604251},
+{r:"Instagram",m:"Março",met:"Contas alcançadas",v:6485623},{r:"Instagram",m:"Março",met:"Interações",v:5125968},
+{r:"Instagram",m:"Abril",met:"Contas alcançadas",v:9744214},{r:"Instagram",m:"Abril",met:"Interações",v:7298368},
+{r:"X",m:"Janeiro",met:"Impressões",v:17700000},{r:"X",m:"Janeiro",met:"Taxa de engajamento",v:0.069},{r:"X",m:"Janeiro",met:"Engajamentos",v:1200000},
+{r:"X",m:"Fevereiro",met:"Impressões",v:14900000},{r:"X",m:"Fevereiro",met:"Taxa de engajamento",v:0.068},{r:"X",m:"Fevereiro",met:"Engajamentos",v:1000000},
+{r:"X",m:"Março",met:"Impressões",v:15900000},{r:"X",m:"Março",met:"Taxa de engajamento",v:0.064},{r:"X",m:"Março",met:"Engajamentos",v:1000000},
+{r:"X",m:"Abril",met:"Impressões",v:17400000},{r:"X",m:"Abril",met:"Taxa de engajamento",v:0.078},{r:"X",m:"Abril",met:"Engajamentos",v:1300000},
+{r:"TikTok",m:"Janeiro",met:"Visualizações",v:2700000},{r:"TikTok",m:"Janeiro",met:"Curtidas",v:244000},
+{r:"TikTok",m:"Fevereiro",met:"Visualizações",v:2800000},{r:"TikTok",m:"Fevereiro",met:"Curtidas",v:248000},
+{r:"TikTok",m:"Março",met:"Visualizações",v:2500000},{r:"TikTok",m:"Março",met:"Curtidas",v:217000},
+{r:"TikTok",m:"Abril",met:"Visualizações",v:8300000},{r:"TikTok",m:"Abril",met:"Curtidas",v:796000},
+{r:"YouTube",m:"Janeiro",met:"Visualizações",v:3400000},{r:"YouTube",m:"Janeiro",met:"Tempo assistido (h)",v:144800},{r:"YouTube",m:"Janeiro",met:"Receita (USD)",v:1761.81},
+{r:"YouTube",m:"Fevereiro",met:"Visualizações",v:2700000},{r:"YouTube",m:"Fevereiro",met:"Tempo assistido (h)",v:155500},{r:"YouTube",m:"Fevereiro",met:"Receita (USD)",v:1934.71},
+{r:"YouTube",m:"Março",met:"Visualizações",v:3800000},{r:"YouTube",m:"Março",met:"Tempo assistido (h)",v:189700},{r:"YouTube",m:"Março",met:"Receita (USD)",v:2375.39},
+{r:"YouTube",m:"Abril",met:"Visualizações",v:5500000},{r:"YouTube",m:"Abril",met:"Tempo assistido (h)",v:263900},{r:"YouTube",m:"Abril",met:"Receita (USD)",v:2910.67}
+];
+
+let dk=false,cC=null,sCI={};
+const sM="Abril"; // hero always shows last month
+
+function nc(n){return dk?NCD[n]||"#888":NCL[n]||"#888"}
+function gv(r,m,met){const d=DATA.find(x=>x.r===r&&x.m===m&&x.met===met);return d?d.v:0}
+function gMets(r){return[...new Set(DATA.filter(x=>x.r===r).map(x=>x.met))]}
+function cmb(m){return NETS.reduce((s,n)=>s+gv(n,m,"Seguidores"),0)}
+function dlt(r,m){const i=MONTHS.indexOf(m);if(i<=0)return null;const p=MONTHS[i-1],c=gv(r,m,"Seguidores"),o=gv(r,p,"Seguidores");if(!o)return null;return((c-o)/o*100).toFixed(1)}
+function cDlt(m){const i=MONTHS.indexOf(m);if(i<=0)return null;return((cmb(m)-cmb(MONTHS[i-1]))/cmb(MONTHS[i-1])*100).toFixed(1)}
+function dltVsFirst(r,m){const f=MONTHS[0];if(m===f)return null;const c=gv(r,m,"Seguidores"),o=gv(r,f,"Seguidores");if(!o)return null;return((c-o)/o*100).toFixed(1)}
+function cDltVsFirst(m){const f=MONTHS[0];if(m===f)return null;const c=cmb(m),o=cmb(f);if(!o)return null;return((c-o)/o*100).toFixed(1)}
+
+function fmtN(n,met){
+  if(met&&(met.toLowerCase().includes("receita")||met.toLowerCase().includes("usd")))return"US$\u00a0"+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(met&&met.toLowerCase().includes("taxa"))return(n*100).toFixed(1)+"%";
+  if(n>=1e6){const s=n/1e6;return(s>=10?s.toFixed(1):s.toFixed(3)).replace(".",",")+"\u202fM"}
+  if(n>=1e5)return(n/1e3).toFixed(0)+"K";
+  if(n>=1e3)return(n/1e3).toFixed(1).replace(".",",")+"\u202fK";
+  return n.toLocaleString("pt-BR")
+}
+function fmtA(n,met){
+  if(met&&(met.toLowerCase().includes("receita")||met.toLowerCase().includes("usd")))return"US$"+n.toFixed(0);
+  if(met&&met.toLowerCase().includes("taxa"))return(n*100).toFixed(1)+"%";
+  if(n>=1e9)return(n/1e9).toFixed(1)+"B";
+  if(n>=1e6)return(n/1e6).toFixed(1)+"M";
+  if(n>=1e5)return(n/1e3).toFixed(0)+"K";
+  if(n>=1e3)return(n/1e3).toFixed(0)+"K";
+  return n.toLocaleString("pt-BR")
+}
+function fmtL(n,met){
+  if(met&&(met.toLowerCase().includes("receita")||met.toLowerCase().includes("usd")))return"US$"+n.toFixed(0);
+  if(met&&met.toLowerCase().includes("taxa"))return(n*100).toFixed(1)+"%";
+  if(n>=1e6){const s=n/1e6;return(s>=10?s.toFixed(1):s.toFixed(3))+"M"}
+  if(n>=1e5)return(n/1e3).toFixed(0)+"K";
+  if(n>=1e3)return(n/1e3).toFixed(1)+"K";
+  return n.toLocaleString("pt-BR")
+}
+function fmtF(n){return typeof n==="number"?n.toLocaleString("pt-BR"):n}
+
+/* ── HERO ── */
+function bHero(){
+  const m=sM,tc=cmb(m),dc=cDlt(m),dcf=cDltVsFirst(m);
+  const firstM=MONTHS[0],prevM=MONTHS[MONTHS.indexOf(m)-1]||null;
+
+  function heroIcon(n){
+    return`<div class="mi" style="background:${NBG[n]||"#888"}">${svgIcon(n,15)}</div>`;
+  }
+
+  let h=`<div class="mc cb">
+    <div class="ml">★ Total Combinado</div>
+    <div class="mv">${fmtN(tc)}</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:1px">${fmtF(tc)} seguidores</div>
+    <div class="mr" style="margin-top:5px">Ranking: <b>#${RK[m].combined}º</b></div>
+    ${dc!==null?`<div class="md ${dc>=0?"du":"dd"}">${dc>=0?"▲":"▼"} ${Math.abs(dc)}% vs ${prevM}</div>`:""}
+    ${dcf!==null?`<div class="md-tooltip">${dcf>=0?"+":""}${dcf}% vs ${firstM}</div>`:""}
+  </div>`;
+
+  NETS.forEach(n=>{
+    const v=gv(n,m,"Seguidores"),d=dlt(n,m),df=dltVsFirst(n,m),r=RK[m][n];
+    h+=`<div class="mc">
+      ${heroIcon(n)}
+      <div class="ml">${n}</div>
+      <div class="mv">${fmtN(v)}</div>
+      <div class="mr">Ranking: <b>#${r}º</b></div>
+      ${d!==null?`<div class="md ${d>=0?"du":"dd"}">${d>=0?"▲":"▼"} ${Math.abs(d)}% vs ${prevM}</div>`:`<div class="md">—</div>`}
+      ${df!==null?`<div class="md-tooltip">${df>=0?"+":""}${df}% vs ${firstM}</div>`:""}
+    </div>`
+  });
+  document.getElementById("hG").innerHTML=h
+}
+
+/* ── STACKED AREA CHART ── */
+function bStackedChart(){
+  const isMob=window.innerWidth<600;
+  const gc=dk?"rgba(255,255,255,.07)":"rgba(0,0,0,.05)";
+  const tc=dk?"#a09d98":"#6b6860";
+  const lblTotal=dk?"#e8d98a":"#7a6520";
+
+  // Legend: Instagram na esquerda → YouTube na direita, Combinado na extrema direita
+  const legendOrder=["Instagram","Facebook","TikTok","X","YouTube"];
+  const legendItems=legendOrder.map(n=>{
+    return`<div class="li"><span class="ld" style="background:${NBG[n]}"></span><span>${n}</span></div>`
+  });
+  legendItems.push(`<div class="li"><span style="display:inline-block;width:20px;height:3px;background:${nc("Combinado")};border-radius:2px"></span><span>Combinado</span></div>`);
+  document.getElementById("cL").innerHTML=legendItems.join("");
+
+  // Use NBG (card colors) for the stacked areas — opacity 1 to avoid color blending between layers
+  const areaDatasets=STACK_ORDER.map(n=>({
+    label:n,
+    data:MONTHS.map(m=>gv(n,m,"Seguidores")),
+    backgroundColor:NBG[n],   // solid — no transparency so colors don't mix
+    borderColor:"transparent",
+    borderWidth:0,
+    fill:true,
+    tension:0.35,
+    pointRadius:0,
+    pointHoverRadius:0,
+    stack:"seg",
+    order:2
+  }));
+
+  // Combined total line (not stacked)
+  const combinedDataset={
+    label:"Combinado",
+    data:MONTHS.map(m=>cmb(m)),
+    backgroundColor:"transparent",
+    borderColor:nc("Combinado"),
+    borderWidth:2.5,
+    fill:false,
+    tension:0.35,
+    pointRadius:isMob?3:5,
+    pointHoverRadius:0,
+    pointBackgroundColor:nc("Combinado"),
+    stack:undefined,
+    order:1
+  };
+
+  if(cC)cC.destroy();
+  cC=new Chart(document.getElementById("cC"),{
+    type:"line",
+    data:{labels:MONTHS,datasets:[...areaDatasets,combinedDataset]},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      layout:{padding:{top:30,left:4,right:4,bottom:4}},
+      interaction:{mode:"none"},   // completely disable hover interaction
+      plugins:{
+        legend:{display:false},
+        tooltip:{enabled:false}    // no tooltip at all
+      },
+      scales:{
+        x:{grid:{color:gc},ticks:{color:tc,font:{family:"DM Sans",size:isMob?10:12}}},
+        y:{
+          stacked:true,
+          grid:{color:gc},
+          ticks:{color:tc,font:{family:"DM Sans",size:isMob?9:11},callback:v=>fmtA(v)},
+          grace:"14%"
+        }
+      }
+    },
+    plugins:[{
+      id:"stackLabels",
+      afterDatasetsDraw(chart){
+        const ctx=chart.ctx;
+        const isMob=window.innerWidth<600;
+        const fontSize=isMob?8:10;
+        const ca=chart.chartArea;
+        // How wide is one "column" of the chart
+        const colW=(ca.right-ca.left)/(MONTHS.length-1||1);
+        const lastXi=MONTHS.length-1;
+
+        // Labels inside each stacked area segment
+        areaDatasets.forEach((ds,di)=>{
+          const meta=chart.getDatasetMeta(di);
+          if(meta.hidden)return;
+          meta.data.forEach((pt,xi)=>{
+            const val=ds.data[xi];
+            if(!val)return;
+            let bottomY=chart.scales.y.getPixelForValue(0);
+            if(di>0){
+              const below=chart.getDatasetMeta(di-1);
+              if(below&&below.data[xi])bottomY=below.data[xi].y;
+            }
+            const segH=bottomY-pt.y;
+            if(segH<(isMob?14:18))return;
+            // For Instagram (bottom layer, di===0), shift label up by 30% of segment
+            // so it sits in the upper portion and is easier to read
+            const labelOffsetRatio=di===0?0.35:0.5;
+            const midY=pt.y+segH*labelOffsetRatio;
+            const lbl=fmtL(val);
+
+            ctx.save();
+            ctx.font=`600 ${fontSize}px DM Sans`;
+            const tw=ctx.measureText(lbl).width;
+            // Inset x for edge columns so label stays over the filled area
+            let lx=pt.x;
+            const inset=tw/2+4;
+            if(xi===0)       lx=Math.max(pt.x,ca.left+inset);
+            if(xi===lastXi)  lx=Math.min(pt.x,ca.right-inset);
+
+            ctx.fillStyle="rgba(255,255,255,0.93)";
+            ctx.shadowColor="rgba(0,0,0,0.4)";ctx.shadowBlur=3;
+            ctx.textAlign="center";ctx.textBaseline="middle";
+            if(tw<colW*0.9)ctx.fillText(lbl,lx,midY);
+            ctx.restore();
+          });
+        });
+
+        // Combined total above the stack
+        const topMeta=chart.getDatasetMeta(areaDatasets.length-1);
+        MONTHS.forEach((m,xi)=>{
+          if(!topMeta||!topMeta.data[xi])return;
+          const topPt=topMeta.data[xi];
+          const total=cmb(m);
+          const lbl=fmtL(total);
+          ctx.save();
+          ctx.font=`700 ${isMob?9:11}px DM Sans`;
+          ctx.fillStyle=lblTotal;
+          // Inset edge labels
+          let lx=topPt.x;
+          const tw=ctx.measureText(lbl).width;
+          const inset=tw/2+4;
+          if(xi===0)       lx=Math.max(topPt.x,ca.left+inset);
+          if(xi===lastXi)  lx=Math.min(topPt.x,ca.right-inset);
+          ctx.textAlign="center";ctx.textBaseline="bottom";
+          ctx.fillText(lbl,lx,topPt.y-6);
+          ctx.restore();
+        });
+      }
+    }]
+  });
+}
+
+/* ── SOCIAL CARDS ── */
+function bSocial(){
+  const cont=document.getElementById("sS");
+  const gc=dk?"rgba(255,255,255,.07)":"rgba(0,0,0,.05)";
+  const tc=dk?"#a09d98":"#6b6860";
+  const isMob=window.innerWidth<860;
+  Object.values(sCI).forEach(c=>c&&c.destroy&&c.destroy());sCI={};
+
+  function cardIcon(n){
+    return`<div class="si" style="background:${NBG[n]||"#888"}">${svgIcon(n,20)}</div>`;
+  }
+
+  function buildCard(n){
+    const mets=gMets(n);
+    // Build chart divs for each metric (including Seguidores)
+    const chartH=mets.map(met=>{
+      const cid=`sc_${n.replace(/[^a-zA-Z]/g,"_")}_${met.replace(/[^a-zA-Z]/g,"_")}`;
+      const h=130;
+      return`<div style="margin-top:12px">
+        <div style="font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500">${met}</div>
+        <div style="position:relative;width:100%;height:${h}px"><canvas id="${cid}" role="img" aria-label="${met} ${n}"></canvas></div>
+      </div>`
+    }).join("");
+    return`<div class="sc">
+      <div class="sh">${cardIcon(n)}<div><div class="sn">${n}</div></div></div>
+      ${chartH}
+    </div>`
+  }
+
+  let html;
+  if(isMob){
+    html=`<div class="sg">${NETS.map(buildCard).join("")}</div>`;
+  } else {
+    const l=["Facebook","Instagram","TikTok"].map(buildCard).join("");
+    const r=["X","YouTube"].map(buildCard).join("");
+    html=`<div class="sg"><div class="sg-left">${l}</div><div class="sg-right">${r}</div></div>`;
+  }
+  cont.innerHTML=html;
+
+  NETS.forEach(n=>{
+    const mets=gMets(n),col=nc(n);
+    mets.forEach((met,mi)=>{
+      const cid=`sc_${n.replace(/[^a-zA-Z]/g,"_")}_${met.replace(/[^a-zA-Z]/g,"_")}`;
+      setTimeout(()=>{
+        const el=document.getElementById(cid);if(!el)return;
+        const vals=MONTHS.map(m=>gv(n,m,met));
+        const maxV=Math.max(...vals);
+        const minV=Math.min(...vals);
+        const range=maxV-minV;
+
+        sCI[cid]=new Chart(el,{
+          type:"line",
+          data:{labels:MONTHS,datasets:[{
+            label:met,data:vals,
+            borderColor:col,backgroundColor:col+"22",
+            fill:true,tension:0.4,
+            pointRadius:4,pointHoverRadius:6,
+            borderWidth:2
+          }]},
+          options:{
+            responsive:true,maintainAspectRatio:false,
+            // Extra top+bottom padding so labels don't clip
+            layout:{padding:{top:20,bottom:4,left:2,right:2}},
+            plugins:{
+              legend:{display:false},
+              tooltip:{callbacks:{label:ctx=>` ${fmtN(ctx.parsed.y,met)}`}}
+            },
+            scales:{
+              x:{grid:{color:gc},ticks:{color:tc,font:{family:"DM Sans",size:9}}},
+              y:{
+                grid:{color:gc},
+                ticks:{color:tc,font:{family:"DM Sans",size:9},callback:v=>fmtA(v,met)},
+                // Give room so top label never clips
+                grace:"18%",
+                suggestedMin:minV-range*0.15
+              }
+            }
+          },
+          plugins:[{
+            id:"lbl_"+cid,
+            afterDatasetsDraw(ch){
+              const cx=ch.ctx;
+              ch.data.datasets.forEach((ds,di)=>{
+                const meta=ch.getDatasetMeta(di);
+                meta.data.forEach((pt,i)=>{
+                  const lbl=fmtL(ds.data[i],met);
+                  const tw=cx.measureText(lbl).width;
+                  const chartW=ch.chartArea.right-ch.chartArea.left;
+                  const slotW=chartW/(MONTHS.length-1||1);
+
+                  // Choose label position: above the point by default;
+                  // if too close to top, put it below
+                  const topMargin=ch.chartArea.top;
+                  let labelY=pt.y-9;
+                  if(labelY<topMargin+4)labelY=pt.y+16;
+
+                  cx.save();
+                  cx.font="500 9px DM Sans";
+                  cx.fillStyle=col;
+                  cx.textAlign="center";
+                  cx.textBaseline="middle";
+                  // Only draw if there's room horizontally
+                  if(tw<slotW*0.95){
+                    cx.fillText(lbl,pt.x,labelY);
+                  }
+                  cx.restore();
+                })
+              })
+            }
+          }]
+        });
+      },mi*25+40)
+    })
+  })
+}
+
+function render(){bHero();bStackedChart();bSocial()}
+function toggleDark(){dk=!dk;dk?document.body.setAttribute("data-dark",""):document.body.removeAttribute("data-dark");document.getElementById("dkBtn").textContent=dk?"☀️":"🌙";render()}
+
+/* ── MODAL ── */
+let rT=MONTHS[MONTHS.length-1];
+function openModal(){document.getElementById("rM").classList.add("open");bMTabs();showRT(rT)}
+function closeModal(){document.getElementById("rM").classList.remove("open")}
+function bMTabs(){
+  document.getElementById("mTs").innerHTML=MONTHS.map(m=>`<div class="mt${m===rT?" active":""}" onclick="showRT('${m}')">${m}</div>`).join("")
+}
+function showRT(m){
+  rT=m;
+  document.querySelectorAll(".mt").forEach(t=>t.classList.toggle("active",t.textContent===m));
+  const mb=document.getElementById("mB");
+  if(RB[m]){
+    mb.innerHTML=`<div class="rank-img-wrap">
+      <img style="width:100%;display:block" src="${RB[m]}" alt="Ranking ${m}">
+      <button class="rank-change-btn" onclick="document.getElementById('rankImg').click()">📎 Trocar imagem</button>
+    </div>`;
+  } else {
+    mb.innerHTML=`<div class="rank-empty">
+      <div class="rank-empty-icon">🏆</div>
+      <div class="rank-empty-txt">Nenhuma imagem do ranking de <b>${m}</b> anexada ainda.</div>
+      <label class="rank-upload-btn" onclick="document.getElementById('rankImg').click()">📎 Anexar imagem do ranking</label>
+    </div>`;
+  }
+}
+function uploadRankImg(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{RB[rT]=ev.target.result;showRT(rT)};
+  reader.readAsDataURL(file);
+  e.target.value="";
+}
+
+/* ── DATA ── */
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:"binary"});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws);
+      DATA=rows.map(r=>({r:r["Rede Social"]||r.r||"",m:r["Mês referência"]||r.m||"",met:r["Métrica"]||r.met||"",v:parseFloat(r["Número"]||r.v)||0}));
+      render();alert("Dados importados!")
+    }catch(err){alert("Erro: "+err.message)}
+  };
+  reader.readAsBinaryString(file)
+}
+function exportData(){
+  const rows=DATA.map(d=>({"Rede Social":d.r,"Mês referência":d.m,"Métrica":d.met,"Número":d.v}));
+  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Sheet1");XLSX.writeFile(wb,"Dados_Redes_Sociais_Botafogo.xlsx")
+}
+
+let resizeTimer;
+window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>render(),220)});
+
+render();
+</script>
+</body>
+</html>
