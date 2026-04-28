@@ -514,9 +514,23 @@ function bSocial(){
     return`<div class="si" style="background:${NBG[n]||"#888"}">${svgIcon(n,20)}</div>`;
   }
 
+  // ── Combined ranking card (Total Combinado) ──
+  function buildCombinedCard(){
+    return`<div class="sc">
+      <div class="sh">
+        <div class="si" style="background:var(--t)"><span style="font-size:14px;color:var(--star)">★</span></div>
+        <div><div class="sn">Total Combinado</div></div>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500">Ranking IBOPE Repucom</div>
+        <div style="position:relative;width:100%;height:110px"><canvas id="sc_combined_ranking"></canvas></div>
+      </div>
+    </div>`
+  }
+
+  // ── Individual network card ──
   function buildCard(n){
     const mets=gMets(n);
-    // Regular metric charts
     const chartH=mets.map(met=>{
       const cid=`sc_${n.replace(/[^a-zA-Z]/g,"_")}_${met.replace(/[^a-zA-Z]/g,"_")}`;
       return`<div style="margin-top:12px">
@@ -524,10 +538,9 @@ function bSocial(){
         <div style="position:relative;width:100%;height:130px"><canvas id="${cid}"></canvas></div>
       </div>`
     }).join("");
-    // Dedicated ranking chart
     const rcid=`sc_${n.replace(/[^a-zA-Z]/g,"_")}_ranking`;
     const rankingChart=`<div style="margin-top:12px">
-      <div style="font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500">Ranking IBOPE</div>
+      <div style="font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500">Ranking IBOPE Repucom</div>
       <div style="position:relative;width:100%;height:110px"><canvas id="${rcid}"></canvas></div>
     </div>`;
     return`<div class="sc">
@@ -536,17 +549,64 @@ function bSocial(){
     </div>`
   }
 
+  // Desktop: left = combined + Instagram + TikTok, right = Facebook + X + YouTube
+  // Mobile:  Total, Instagram, Facebook, TikTok, X, YouTube
   let html;
   if(isMob){
-    html=`<div class="sg">${NETS.map(buildCard).join("")}</div>`;
+    const mobileOrder=["Instagram","Facebook","TikTok","X","YouTube"];
+    html=`<div class="sg">${buildCombinedCard()}${mobileOrder.map(buildCard).join("")}</div>`;
   } else {
-    const l=["Facebook","Instagram","TikTok"].map(buildCard).join("");
-    const r=["X","YouTube"].map(buildCard).join("");
-    html=`<div class="sg"><div class="sg-left">${l}</div><div class="sg-right">${r}</div></div>`;
+    const leftHTML=buildCombinedCard()+["Instagram","TikTok"].map(buildCard).join("");
+    const rightHTML=["Facebook","X","YouTube"].map(buildCard).join("");
+    html=`<div class="sg"><div class="sg-left">${leftHTML}</div><div class="sg-right">${rightHTML}</div></div>`;
   }
   cont.innerHTML=html;
 
-  // Render metric charts
+  // ── Render combined ranking chart ──
+  setTimeout(()=>{
+    const el=document.getElementById("sc_combined_ranking");if(!el)return;
+    const rankVals=MONTHS.map(m=>RK[m]?RK[m].combined:null);
+    const validVals=rankVals.filter(v=>v!==null);
+    const rankMin=Math.min(...validVals),rankMax=Math.max(...validVals);
+    const gold="rgba(200,168,75,1)",goldFill="rgba(200,168,75,0.15)";
+    sCI["sc_combined_ranking"]=new Chart(el,{
+      type:"line",
+      data:{labels:MONTHS,datasets:[{
+        label:"Ranking",data:rankVals,
+        borderColor:gold,backgroundColor:goldFill,
+        fill:true,tension:0.3,
+        pointRadius:5,pointHoverRadius:7,
+        pointBackgroundColor:gold,borderWidth:2
+      }]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        layout:{padding:{top:22,bottom:4,left:2,right:2}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y}º lugar`}}},
+        scales:{
+          x:{grid:{color:gc},ticks:{color:tc,font:{family:"DM Sans",size:9}}},
+          y:{grid:{color:gc},reverse:true,
+            min:Math.max(1,rankMin-3),max:rankMax+3,
+            ticks:{color:tc,font:{family:"DM Sans",size:9},stepSize:1,callback:v=>Number.isInteger(v)?`${v}º`:""}}
+        }
+      },
+      plugins:[{id:"rlbl_combined",afterDatasetsDraw(ch){
+        const cx=ch.ctx,ds=ch.data.datasets[0],meta=ch.getDatasetMeta(0);
+        const slotW=(ch.chartArea.right-ch.chartArea.left)/(MONTHS.length-1||1);
+        const gold2="rgba(200,168,75,1)";
+        meta.data.forEach((pt,i)=>{
+          if(ds.data[i]==null)return;
+          const lbl=`${ds.data[i]}º`,tw=cx.measureText(lbl).width;
+          let labelY=pt.y-10;if(labelY<ch.chartArea.top+4)labelY=pt.y+14;
+          cx.save();cx.font="600 9px DM Sans";cx.fillStyle=gold2;
+          cx.textAlign="center";cx.textBaseline="middle";
+          if(tw<slotW*0.95)cx.fillText(lbl,pt.x,labelY);
+          cx.restore();
+        })
+      }}]
+    });
+  },30);
+
+  // ── Render individual network metric charts ──
   NETS.forEach(n=>{
     const mets=gMets(n),col=nc(n);
     mets.forEach((met,mi)=>{
@@ -588,7 +648,7 @@ function bSocial(){
       },mi*25+40)
     });
 
-    // Render dedicated ranking chart
+    // ── Render individual network ranking chart ──
     const rcid=`sc_${n.replace(/[^a-zA-Z]/g,"_")}_ranking`;
     const rankDelay=gMets(n).length*25+80;
     setTimeout(()=>{
@@ -604,8 +664,7 @@ function bSocial(){
           borderColor:gold,backgroundColor:goldFill,
           fill:true,tension:0.3,
           pointRadius:5,pointHoverRadius:7,
-          pointBackgroundColor:gold,
-          borderWidth:2
+          pointBackgroundColor:gold,borderWidth:2
         }]},
         options:{
           responsive:true,maintainAspectRatio:false,
@@ -613,23 +672,20 @@ function bSocial(){
           plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y}º lugar`}}},
           scales:{
             x:{grid:{color:gc},ticks:{color:tc,font:{family:"DM Sans",size:9}}},
-            y:{
-              grid:{color:gc},
-              reverse:true,
-              min:Math.max(1,rankMin-3),
-              max:rankMax+3,
-              ticks:{color:tc,font:{family:"DM Sans",size:9},stepSize:1,callback:v=>Number.isInteger(v)?`${v}º`:""}
-            }
+            y:{grid:{color:gc},reverse:true,
+              min:Math.max(1,rankMin-3),max:rankMax+3,
+              ticks:{color:tc,font:{family:"DM Sans",size:9},stepSize:1,callback:v=>Number.isInteger(v)?`${v}º`:""}}
           }
         },
         plugins:[{id:"rlbl_"+rcid,afterDatasetsDraw(ch){
           const cx=ch.ctx,ds=ch.data.datasets[0],meta=ch.getDatasetMeta(0);
           const slotW=(ch.chartArea.right-ch.chartArea.left)/(MONTHS.length-1||1);
+          const gold2="rgba(200,168,75,1)";
           meta.data.forEach((pt,i)=>{
             if(ds.data[i]==null)return;
             const lbl=`${ds.data[i]}º`,tw=cx.measureText(lbl).width;
             let labelY=pt.y-10;if(labelY<ch.chartArea.top+4)labelY=pt.y+14;
-            cx.save();cx.font="600 9px DM Sans";cx.fillStyle=gold;
+            cx.save();cx.font="600 9px DM Sans";cx.fillStyle=gold2;
             cx.textAlign="center";cx.textBaseline="middle";
             if(tw<slotW*0.95)cx.fillText(lbl,pt.x,labelY);
             cx.restore();
@@ -698,15 +754,15 @@ function importData(e){
       const wb=XLSX.read(ev.target.result,{type:"binary"});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const rows=XLSX.utils.sheet_to_json(ws);
-      // Separate ranking rows from metric rows
       const metricRows=rows.filter(r=>!(r["Métrica"]||r.met||"").toString().toLowerCase().includes("ranking"));
       const rankRows=rows.filter(r=>(r["Métrica"]||r.met||"").toString().toLowerCase().includes("ranking"));
       DATA=metricRows.map(r=>({r:r["Rede Social"]||r.r||"",m:r["Mês referência"]||r.m||"",met:r["Métrica"]||r.met||"",v:parseFloat(r["Número"]||r.v)||0}));
-      // Update RK from ranking rows
       rankRows.forEach(r=>{
-        const net=r["Rede Social"]||r.r||"";
+        let net=r["Rede Social"]||r.r||"";
         const mes=r["Mês referência"]||r.m||"";
         const val=parseInt(r["Número"]||r.v)||0;
+        // Map "Total Combinado" or "Total Combinado" → combined key
+        if(net==="Total Combinado"||net==="Total Combinado")net="combined";
         if(RK[mes]&&net)RK[mes][net]=val;
       });
       render();alert("Dados importados!")
@@ -715,16 +771,16 @@ function importData(e){
   reader.readAsBinaryString(file)
 }
 function exportData(){
-  // Metric rows
   const metRows=DATA.map(d=>({"Rede Social":d.r,"Mês referência":d.m,"Métrica":d.met,"Número":d.v}));
-  // Ranking rows — one per network per month
   const rankRows=[];
   MONTHS.forEach(m=>{
-    [...NETS,"combined"].forEach(n=>{
-      const key=n==="combined"?"combined":n;
-      const label=n==="combined"?"Total Combinado":n;
-      if(RK[m]&&RK[m][key]!==undefined){
-        rankRows.push({"Rede Social":label,"Mês referência":m,"Métrica":"Ranking","Número":RK[m][key]});
+    // Combined first, then each network
+    if(RK[m]&&RK[m].combined!==undefined){
+      rankRows.push({"Rede Social":"Total Combinado","Mês referência":m,"Métrica":"Ranking","Número":RK[m].combined});
+    }
+    NETS.forEach(n=>{
+      if(RK[m]&&RK[m][n]!==undefined){
+        rankRows.push({"Rede Social":n,"Mês referência":m,"Métrica":"Ranking","Número":RK[m][n]});
       }
     });
   });
