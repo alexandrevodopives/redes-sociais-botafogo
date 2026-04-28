@@ -265,6 +265,16 @@ let RB={Janeiro:"",Fevereiro:"",Março:"",Abril:""};
 // Load saved ranking images from localStorage
 (function(){try{const saved=localStorage.getItem("bota_rb");if(saved){const p=JSON.parse(saved);Object.assign(RB,p)}}catch(e){}})();
 
+// Helper: save DATA + RK to localStorage
+function saveDataToStorage(){
+  try{
+    localStorage.setItem("bota_data",JSON.stringify(DATA));
+    localStorage.setItem("bota_rk",JSON.stringify(RK));
+  }catch(e){
+    alert("Atenção: não foi possível salvar os dados permanentemente (armazenamento cheio).");
+  }
+}
+
 let DATA=[
 {r:"Facebook",m:"Janeiro",met:"Seguidores",v:1500000},{r:"X",m:"Janeiro",met:"Seguidores",v:1241546},{r:"Instagram",m:"Janeiro",met:"Seguidores",v:1964785},{r:"YouTube",m:"Janeiro",met:"Seguidores",v:675000},{r:"TikTok",m:"Janeiro",met:"Seguidores",v:1300000},
 {r:"Facebook",m:"Fevereiro",met:"Seguidores",v:1500000},{r:"X",m:"Fevereiro",met:"Seguidores",v:1242760},{r:"Instagram",m:"Fevereiro",met:"Seguidores",v:1970287},{r:"YouTube",m:"Fevereiro",met:"Seguidores",v:678000},{r:"TikTok",m:"Fevereiro",met:"Seguidores",v:1300000},
@@ -287,6 +297,17 @@ let DATA=[
 {r:"YouTube",m:"Março",met:"Visualizações",v:3800000},{r:"YouTube",m:"Março",met:"Tempo assistido (h)",v:189700},{r:"YouTube",m:"Março",met:"Receita (USD)",v:2375.39},
 {r:"YouTube",m:"Abril",met:"Visualizações",v:5500000},{r:"YouTube",m:"Abril",met:"Tempo assistido (h)",v:263900},{r:"YouTube",m:"Abril",met:"Receita (USD)",v:2910.67}
 ];
+// Load saved DATA and RK from localStorage (overrides defaults if present)
+(function(){
+  try{
+    const sd=localStorage.getItem("bota_data");
+    if(sd)DATA=JSON.parse(sd);
+  }catch(e){}
+  try{
+    const sr=localStorage.getItem("bota_rk");
+    if(sr)Object.assign(RK,JSON.parse(sr));
+  }catch(e){}
+})();
 
 let dk=false,cC=null,sCI={};
 const sM="Abril"; // hero always shows last month
@@ -765,7 +786,9 @@ function importData(e){
         if(net==="Total Combinado"||net==="Total Combinado")net="combined";
         if(RK[mes]&&net)RK[mes][net]=val;
       });
-      render();alert("Dados importados!")
+      render();
+      saveDataToStorage();
+      alert("Dados importados e salvos!")
     }catch(err){alert("Erro: "+err.message)}
   };
   reader.readAsBinaryString(file)
