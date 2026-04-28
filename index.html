@@ -255,7 +255,12 @@ function svgIcon(n,size){
   return`<div style="width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center">${NLOGO[n]||""}</div>`;
 }
 
-const RK={Janeiro:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11},Fevereiro:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11},Março:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11},Abril:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11}};
+const RK={
+  Janeiro: {combined:12,Instagram:13,Facebook:13,TikTok:10,X:14,YouTube:11},
+  Fevereiro:{combined:12,Instagram:13,Facebook:13,TikTok:10,X:14,YouTube:11},
+  Março:   {combined:12,Instagram:13,Facebook:13,TikTok:10,X:14,YouTube:11},
+  Abril:   {combined:12,Instagram:13,Facebook:13,TikTok:10,X:14,YouTube:11}
+};
 let RB={Janeiro:"",Fevereiro:"",Março:"",Abril:""};
 // Load saved ranking images from localStorage
 (function(){try{const saved=localStorage.getItem("bota_rb");if(saved){const p=JSON.parse(saved);Object.assign(RB,p)}}catch(e){}})();
@@ -334,8 +339,8 @@ function bHero(){
   let h=`<div class="mc cb">
     <div class="ml">★ Total Combinado</div>
     <div class="mv">${fmtN(tc)}</div>
-    <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:1px">${fmtF(tc)} seguidores</div>
-    <div class="mr" style="margin-top:5px">Ranking: <b>#${RK[m].combined}º</b></div>
+    <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:1px">seguidores</div>
+    <div class="mr" style="margin-top:5px;font-size:12px">Ranking: <b style="font-size:13px">#${RK[m].combined}º</b></div>
     ${dc!==null?`<div class="md ${dc>=0?"du":"dd"}">${dc>=0?"▲":"▼"} ${Math.abs(dc)}% vs ${prevM}</div>`:""}
     ${dcf!==null?`<div class="md-tooltip">${dcf>=0?"+":""}${dcf}% vs ${firstM}</div>`:""}
   </div>`;
@@ -346,7 +351,7 @@ function bHero(){
       ${heroIcon(n)}
       <div class="ml">${n}</div>
       <div class="mv">${fmtN(v)}</div>
-      <div class="mr">Ranking: <b>#${r}º</b></div>
+      <div class="mr" style="font-size:12px">Ranking: <b style="font-size:13px">#${r}º</b></div>
       ${d!==null?`<div class="md ${d>=0?"du":"dd"}">${d>=0?"▲":"▼"} ${Math.abs(d)}% vs ${prevM}</div>`:`<div class="md">—</div>`}
       ${df!==null?`<div class="md-tooltip">${df>=0?"+":""}${df}% vs ${firstM}</div>`:""}
     </div>`
@@ -369,11 +374,11 @@ function bStackedChart(){
   legendItems.push(`<div class="li"><span style="display:inline-block;width:20px;height:3px;background:${nc("Combinado")};border-radius:2px"></span><span>Combinado</span></div>`);
   document.getElementById("cL").innerHTML=legendItems.join("");
 
-  // Use NBG (card colors) for the stacked areas — opacity 1 to avoid color blending between layers
+  // Use NBG (card colors) for the stacked areas — solid colors, stack:"seg"
   const areaDatasets=STACK_ORDER.map(n=>({
     label:n,
     data:MONTHS.map(m=>gv(n,m,"Seguidores")),
-    backgroundColor:NBG[n],   // solid — no transparency so colors don't mix
+    backgroundColor:NBG[n],
     borderColor:"transparent",
     borderWidth:0,
     fill:true,
@@ -417,6 +422,7 @@ function bStackedChart(){
         x:{grid:{color:gc},ticks:{color:tc,font:{family:"DM Sans",size:isMob?10:12}}},
         y:{
           stacked:true,
+          min:0,
           grid:{color:gc},
           ticks:{color:tc,font:{family:"DM Sans",size:isMob?9:11},callback:v=>fmtA(v)},
           grace:"14%"
@@ -510,18 +516,23 @@ function bSocial(){
 
   function buildCard(n){
     const mets=gMets(n);
-    // Build chart divs for each metric (including Seguidores)
+    // Regular metric charts
     const chartH=mets.map(met=>{
       const cid=`sc_${n.replace(/[^a-zA-Z]/g,"_")}_${met.replace(/[^a-zA-Z]/g,"_")}`;
-      const h=130;
       return`<div style="margin-top:12px">
         <div style="font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500">${met}</div>
-        <div style="position:relative;width:100%;height:${h}px"><canvas id="${cid}" role="img" aria-label="${met} ${n}"></canvas></div>
+        <div style="position:relative;width:100%;height:130px"><canvas id="${cid}"></canvas></div>
       </div>`
     }).join("");
+    // Dedicated ranking chart
+    const rcid=`sc_${n.replace(/[^a-zA-Z]/g,"_")}_ranking`;
+    const rankingChart=`<div style="margin-top:12px">
+      <div style="font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:500">Ranking IBOPE</div>
+      <div style="position:relative;width:100%;height:110px"><canvas id="${rcid}"></canvas></div>
+    </div>`;
     return`<div class="sc">
       <div class="sh">${cardIcon(n)}<div><div class="sn">${n}</div></div></div>
-      ${chartH}
+      ${chartH}${rankingChart}
     </div>`
   }
 
@@ -535,6 +546,7 @@ function bSocial(){
   }
   cont.innerHTML=html;
 
+  // Render metric charts
   NETS.forEach(n=>{
     const mets=gMets(n),col=nc(n);
     mets.forEach((met,mi)=>{
@@ -542,73 +554,89 @@ function bSocial(){
       setTimeout(()=>{
         const el=document.getElementById(cid);if(!el)return;
         const vals=MONTHS.map(m=>gv(n,m,met));
-        const maxV=Math.max(...vals);
-        const minV=Math.min(...vals);
-        const range=maxV-minV;
-
+        const maxV=Math.max(...vals),minV=Math.min(...vals),range=maxV-minV;
         sCI[cid]=new Chart(el,{
           type:"line",
           data:{labels:MONTHS,datasets:[{
             label:met,data:vals,
             borderColor:col,backgroundColor:col+"22",
             fill:true,tension:0.4,
-            pointRadius:4,pointHoverRadius:6,
-            borderWidth:2
+            pointRadius:4,pointHoverRadius:6,borderWidth:2
           }]},
           options:{
             responsive:true,maintainAspectRatio:false,
-            // Extra top+bottom padding so labels don't clip
             layout:{padding:{top:20,bottom:4,left:2,right:2}},
-            plugins:{
-              legend:{display:false},
-              tooltip:{callbacks:{label:ctx=>` ${fmtN(ctx.parsed.y,met)}`}}
-            },
+            plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmtN(ctx.parsed.y,met)}`}}},
             scales:{
               x:{grid:{color:gc},ticks:{color:tc,font:{family:"DM Sans",size:9}}},
-              y:{
-                grid:{color:gc},
-                ticks:{color:tc,font:{family:"DM Sans",size:9},callback:v=>fmtA(v,met)},
-                // Give room so top label never clips
-                grace:"18%",
-                suggestedMin:minV-range*0.15
-              }
+              y:{grid:{color:gc},ticks:{color:tc,font:{family:"DM Sans",size:9},callback:v=>fmtA(v,met)},grace:"18%",suggestedMin:minV-range*0.15}
             }
           },
-          plugins:[{
-            id:"lbl_"+cid,
-            afterDatasetsDraw(ch){
-              const cx=ch.ctx;
-              ch.data.datasets.forEach((ds,di)=>{
-                const meta=ch.getDatasetMeta(di);
-                meta.data.forEach((pt,i)=>{
-                  const lbl=fmtL(ds.data[i],met);
-                  const tw=cx.measureText(lbl).width;
-                  const chartW=ch.chartArea.right-ch.chartArea.left;
-                  const slotW=chartW/(MONTHS.length-1||1);
-
-                  // Choose label position: above the point by default;
-                  // if too close to top, put it below
-                  const topMargin=ch.chartArea.top;
-                  let labelY=pt.y-9;
-                  if(labelY<topMargin+4)labelY=pt.y+16;
-
-                  cx.save();
-                  cx.font="500 9px DM Sans";
-                  cx.fillStyle=col;
-                  cx.textAlign="center";
-                  cx.textBaseline="middle";
-                  // Only draw if there's room horizontally
-                  if(tw<slotW*0.95){
-                    cx.fillText(lbl,pt.x,labelY);
-                  }
-                  cx.restore();
-                })
-              })
-            }
-          }]
+          plugins:[{id:"lbl_"+cid,afterDatasetsDraw(ch){
+            const cx=ch.ctx,ds=ch.data.datasets[0],meta=ch.getDatasetMeta(0);
+            const slotW=(ch.chartArea.right-ch.chartArea.left)/(MONTHS.length-1||1);
+            meta.data.forEach((pt,i)=>{
+              const lbl=fmtL(ds.data[i],met),tw=cx.measureText(lbl).width;
+              let labelY=pt.y-9;if(labelY<ch.chartArea.top+4)labelY=pt.y+16;
+              cx.save();cx.font="500 9px DM Sans";cx.fillStyle=col;
+              cx.textAlign="center";cx.textBaseline="middle";
+              if(tw<slotW*0.95)cx.fillText(lbl,pt.x,labelY);
+              cx.restore();
+            })
+          }}]
         });
       },mi*25+40)
-    })
+    });
+
+    // Render dedicated ranking chart
+    const rcid=`sc_${n.replace(/[^a-zA-Z]/g,"_")}_ranking`;
+    const rankDelay=gMets(n).length*25+80;
+    setTimeout(()=>{
+      const el=document.getElementById(rcid);if(!el)return;
+      const rankVals=MONTHS.map(m=>RK[m]?RK[m][n]:null);
+      const validVals=rankVals.filter(v=>v!==null);
+      const rankMin=Math.min(...validVals),rankMax=Math.max(...validVals);
+      const gold="rgba(200,168,75,1)",goldFill="rgba(200,168,75,0.15)";
+      sCI[rcid]=new Chart(el,{
+        type:"line",
+        data:{labels:MONTHS,datasets:[{
+          label:"Ranking",data:rankVals,
+          borderColor:gold,backgroundColor:goldFill,
+          fill:true,tension:0.3,
+          pointRadius:5,pointHoverRadius:7,
+          pointBackgroundColor:gold,
+          borderWidth:2
+        }]},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          layout:{padding:{top:22,bottom:4,left:2,right:2}},
+          plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y}º lugar`}}},
+          scales:{
+            x:{grid:{color:gc},ticks:{color:tc,font:{family:"DM Sans",size:9}}},
+            y:{
+              grid:{color:gc},
+              reverse:true,
+              min:Math.max(1,rankMin-3),
+              max:rankMax+3,
+              ticks:{color:tc,font:{family:"DM Sans",size:9},stepSize:1,callback:v=>Number.isInteger(v)?`${v}º`:""}
+            }
+          }
+        },
+        plugins:[{id:"rlbl_"+rcid,afterDatasetsDraw(ch){
+          const cx=ch.ctx,ds=ch.data.datasets[0],meta=ch.getDatasetMeta(0);
+          const slotW=(ch.chartArea.right-ch.chartArea.left)/(MONTHS.length-1||1);
+          meta.data.forEach((pt,i)=>{
+            if(ds.data[i]==null)return;
+            const lbl=`${ds.data[i]}º`,tw=cx.measureText(lbl).width;
+            let labelY=pt.y-10;if(labelY<ch.chartArea.top+4)labelY=pt.y+14;
+            cx.save();cx.font="600 9px DM Sans";cx.fillStyle=gold;
+            cx.textAlign="center";cx.textBaseline="middle";
+            if(tw<slotW*0.95)cx.fillText(lbl,pt.x,labelY);
+            cx.restore();
+          })
+        }}]
+      });
+    },rankDelay)
   })
 }
 
@@ -662,7 +690,6 @@ function uploadRankImg(e){
   e.target.value="";
 }
 
-/* ── DATA ── */
 function importData(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
@@ -671,15 +698,38 @@ function importData(e){
       const wb=XLSX.read(ev.target.result,{type:"binary"});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const rows=XLSX.utils.sheet_to_json(ws);
-      DATA=rows.map(r=>({r:r["Rede Social"]||r.r||"",m:r["Mês referência"]||r.m||"",met:r["Métrica"]||r.met||"",v:parseFloat(r["Número"]||r.v)||0}));
+      // Separate ranking rows from metric rows
+      const metricRows=rows.filter(r=>!(r["Métrica"]||r.met||"").toString().toLowerCase().includes("ranking"));
+      const rankRows=rows.filter(r=>(r["Métrica"]||r.met||"").toString().toLowerCase().includes("ranking"));
+      DATA=metricRows.map(r=>({r:r["Rede Social"]||r.r||"",m:r["Mês referência"]||r.m||"",met:r["Métrica"]||r.met||"",v:parseFloat(r["Número"]||r.v)||0}));
+      // Update RK from ranking rows
+      rankRows.forEach(r=>{
+        const net=r["Rede Social"]||r.r||"";
+        const mes=r["Mês referência"]||r.m||"";
+        const val=parseInt(r["Número"]||r.v)||0;
+        if(RK[mes]&&net)RK[mes][net]=val;
+      });
       render();alert("Dados importados!")
     }catch(err){alert("Erro: "+err.message)}
   };
   reader.readAsBinaryString(file)
 }
 function exportData(){
-  const rows=DATA.map(d=>({"Rede Social":d.r,"Mês referência":d.m,"Métrica":d.met,"Número":d.v}));
-  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Sheet1");XLSX.writeFile(wb,"Dados_Redes_Sociais_Botafogo.xlsx")
+  // Metric rows
+  const metRows=DATA.map(d=>({"Rede Social":d.r,"Mês referência":d.m,"Métrica":d.met,"Número":d.v}));
+  // Ranking rows — one per network per month
+  const rankRows=[];
+  MONTHS.forEach(m=>{
+    [...NETS,"combined"].forEach(n=>{
+      const key=n==="combined"?"combined":n;
+      const label=n==="combined"?"Total Combinado":n;
+      if(RK[m]&&RK[m][key]!==undefined){
+        rankRows.push({"Rede Social":label,"Mês referência":m,"Métrica":"Ranking","Número":RK[m][key]});
+      }
+    });
+  });
+  const allRows=[...metRows,...rankRows];
+  const ws=XLSX.utils.json_to_sheet(allRows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Sheet1");XLSX.writeFile(wb,"Dados_Redes_Sociais_Botafogo.xlsx")
 }
 
 let resizeTimer;
