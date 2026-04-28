@@ -234,12 +234,12 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif}
 
 <script>
 const MONTHS=["Janeiro","Fevereiro","Março","Abril"];
-const NETS=["Facebook","X","Instagram","YouTube","TikTok"];
+const NETS=["Instagram","Facebook","TikTok","X","YouTube"];
 // Stacked area order — bottom to top
 const STACK_ORDER=["Instagram","Facebook","TikTok","X","YouTube"];
 const NCL={Facebook:"#1877F2",X:"#3a3a3a",Instagram:"#C13584",YouTube:"#FF0000",TikTok:"#888888",Combinado:"#C8A84B"};
 const NCD={Facebook:"#4a9ff5",X:"#aaaaaa",Instagram:"#e1609a",YouTube:"#ff5252",TikTok:"#d0d0d0",Combinado:"#C8A84B"};
-const NBG={Facebook:"#1877F2",X:"#3a3a3a",Instagram:"#C13584",YouTube:"#FF0000",TikTok:"#888888"};
+const NBG={Facebook:"#1877F2",X:"#3a3a3a",Instagram:"#C13584",YouTube:"#FF0000",TikTok:"#000000"};
 
 const NLOGO={
   Facebook:`<svg viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`,
@@ -255,6 +255,8 @@ function svgIcon(n,size){
 
 const RK={Janeiro:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11},Fevereiro:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11},Março:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11},Abril:{combined:12,Facebook:13,X:14,Instagram:13,YouTube:11,TikTok:11}};
 let RB={Janeiro:"",Fevereiro:"",Março:"",Abril:""};
+// Load saved ranking images from localStorage
+(function(){try{const saved=localStorage.getItem("bota_rb");if(saved){const p=JSON.parse(saved);Object.assign(RB,p)}}catch(e){}})();
 
 let DATA=[
 {r:"Facebook",m:"Janeiro",met:"Seguidores",v:1500000},{r:"X",m:"Janeiro",met:"Seguidores",v:1241546},{r:"Instagram",m:"Janeiro",met:"Seguidores",v:1964785},{r:"YouTube",m:"Janeiro",met:"Seguidores",v:675000},{r:"TikTok",m:"Janeiro",met:"Seguidores",v:1300000},
@@ -638,7 +640,14 @@ function showRT(m){
 function uploadRankImg(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=ev=>{RB[rT]=ev.target.result;showRT(rT)};
+  reader.onload=ev=>{
+    RB[rT]=ev.target.result;
+    try{localStorage.setItem("bota_rb",JSON.stringify(RB))}catch(err){
+      // localStorage might be full (images are large) — warn user
+      alert("Atenção: não foi possível salvar a imagem permanentemente (armazenamento cheio). A imagem ficará disponível apenas nesta sessão.");
+    }
+    showRT(rT);
+  };
   reader.readAsDataURL(file);
   e.target.value="";
 }
@@ -710,8 +719,11 @@ function sendForgot(){
 }
 
 // Allow Enter key on login fields
-document.getElementById("liUser").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("liPass").focus()});
-document.getElementById("liPass").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin()});
+// Wait for DOM so login fields exist before attaching listeners
+document.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("liUser").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("liPass").focus()});
+  document.getElementById("liPass").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin()});
+});
 
 </script>
 <!-- ── LOGIN SCREEN ── -->
