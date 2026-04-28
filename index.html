@@ -180,9 +180,12 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif}
 .rank-upload-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--rs);border:1.5px dashed var(--b);background:var(--s2);color:var(--t);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
 .rank-upload-btn:hover{border-color:var(--star);color:var(--star)}
 .rank-img-wrap{position:relative}
-.rank-img-wrap:hover .rank-change-btn{opacity:1}
-.rank-change-btn{position:absolute;bottom:12px;right:12px;opacity:0;transition:opacity .2s;padding:7px 14px;border-radius:var(--rs);background:rgba(0,0,0,.7);color:#fff;font-size:11px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px}
-@media(max-width:599px){.rank-change-btn{opacity:1}}
+.rank-img-wrap:hover .rank-actions{opacity:1}
+.rank-actions{position:absolute;bottom:12px;right:12px;opacity:0;transition:opacity .2s;display:flex;gap:6px}
+@media(max-width:599px){.rank-actions{opacity:1}}
+.rank-change-btn,.rank-remove-btn{padding:7px 13px;border-radius:var(--rs);font-size:11px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:4px}
+.rank-change-btn{background:rgba(0,0,0,.7);color:#fff}
+.rank-remove-btn{background:rgba(200,40,40,.85);color:#fff}
 </style>
 </head>
 <body>
@@ -223,7 +226,6 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif}
       <h3>Ranking IBOPE Repucom — Clubes Brasileiros 2026</h3>
       <div class="mh-row">
         <div class="mts" id="mTs"></div>
-        <button class="btn" onclick="document.getElementById('rankImg').click()" style="padding:5px 9px;font-size:11px">📎 <span class="btn-lbl">Imagem</span></button>
         <input type="file" id="rankImg" accept="image/*" style="display:none" onchange="uploadRankImg(event)">
         <button class="mc2" onclick="closeModal()">✕</button>
       </div>
@@ -627,7 +629,10 @@ function showRT(m){
   if(RB[m]){
     mb.innerHTML=`<div class="rank-img-wrap">
       <img style="width:100%;display:block" src="${RB[m]}" alt="Ranking ${m}">
-      <button class="rank-change-btn" onclick="document.getElementById('rankImg').click()">📎 Trocar imagem</button>
+      <div class="rank-actions">
+        <button class="rank-change-btn" onclick="document.getElementById('rankImg').click()">📎 Trocar</button>
+        <button class="rank-remove-btn" onclick="removeRankImg('${m}')">🗑 Remover</button>
+      </div>
     </div>`;
   } else {
     mb.innerHTML=`<div class="rank-empty">
@@ -636,6 +641,11 @@ function showRT(m){
       <label class="rank-upload-btn" onclick="document.getElementById('rankImg').click()">📎 Anexar imagem do ranking</label>
     </div>`;
   }
+}
+function removeRankImg(m){
+  RB[m]="";
+  try{localStorage.setItem("bota_rb",JSON.stringify(RB))}catch(e){}
+  showRT(m);
 }
 function uploadRankImg(e){
   const file=e.target.files[0];if(!file)return;
