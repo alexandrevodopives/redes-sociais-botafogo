@@ -120,7 +120,8 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif}
 .mc.cb .ml,.mc.cb .mr,.mc.cb .md,.mc.cb .md-tooltip{color:rgba(255,255,255,.5)}
 [data-dark] .mc.cb{background:var(--star)}
 [data-dark] .mc.cb .mv{color:#111}
-[data-dark] .mc.cb .ml,[data-dark] .mc.cb .mr,[data-dark] .mc.cb .md,[data-dark] .mc.cb .md-tooltip{color:rgba(0,0,0,.55)}
+[data-dark] .mc.cb .ml,[data-dark] .mc.cb .mr,[data-dark] .mc.cb .md,[data-dark] .mc.cb .md-tooltip{color:rgba(0,0,0,.6)}
+[data-dark] .mc.cb .mr b{color:#111!important;font-weight:800}
 .mi{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:7px;overflow:hidden;flex-shrink:0}
 .ml{font-size:11px;color:var(--t2);font-weight:500;margin-bottom:2px}
 .mv{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;line-height:1;margin-bottom:4px}
@@ -284,10 +285,10 @@ let DATA=[
 {r:"Instagram",m:"Fevereiro",met:"Contas alcançadas",v:6721088},{r:"Instagram",m:"Fevereiro",met:"Interações",v:5604251},
 {r:"Instagram",m:"Março",met:"Contas alcançadas",v:6485623},{r:"Instagram",m:"Março",met:"Interações",v:5125968},
 {r:"Instagram",m:"Abril",met:"Contas alcançadas",v:9744214},{r:"Instagram",m:"Abril",met:"Interações",v:7298368},
-{r:"X",m:"Janeiro",met:"Impressões",v:17700000},{r:"X",m:"Janeiro",met:"Taxa de engajamento",v:0.069},{r:"X",m:"Janeiro",met:"Engajamentos",v:1200000},
-{r:"X",m:"Fevereiro",met:"Impressões",v:14900000},{r:"X",m:"Fevereiro",met:"Taxa de engajamento",v:0.068},{r:"X",m:"Fevereiro",met:"Engajamentos",v:1000000},
-{r:"X",m:"Março",met:"Impressões",v:15900000},{r:"X",m:"Março",met:"Taxa de engajamento",v:0.064},{r:"X",m:"Março",met:"Engajamentos",v:1000000},
-{r:"X",m:"Abril",met:"Impressões",v:17400000},{r:"X",m:"Abril",met:"Taxa de engajamento",v:0.078},{r:"X",m:"Abril",met:"Engajamentos",v:1300000},
+{r:"X",m:"Janeiro",met:"Impressões",v:17700000},{r:"X",m:"Janeiro",met:"Engajamentos",v:1200000},{r:"X",m:"Janeiro",met:"Taxa de engajamento",v:0.069},
+{r:"X",m:"Fevereiro",met:"Impressões",v:14900000},{r:"X",m:"Fevereiro",met:"Engajamentos",v:1000000},{r:"X",m:"Fevereiro",met:"Taxa de engajamento",v:0.068},
+{r:"X",m:"Março",met:"Impressões",v:15900000},{r:"X",m:"Março",met:"Engajamentos",v:1000000},{r:"X",m:"Março",met:"Taxa de engajamento",v:0.064},
+{r:"X",m:"Abril",met:"Impressões",v:17400000},{r:"X",m:"Abril",met:"Engajamentos",v:1300000},{r:"X",m:"Abril",met:"Taxa de engajamento",v:0.078},
 {r:"TikTok",m:"Janeiro",met:"Visualizações",v:2700000},{r:"TikTok",m:"Janeiro",met:"Curtidas",v:244000},
 {r:"TikTok",m:"Fevereiro",met:"Visualizações",v:2800000},{r:"TikTok",m:"Fevereiro",met:"Curtidas",v:248000},
 {r:"TikTok",m:"Março",met:"Visualizações",v:2500000},{r:"TikTok",m:"Março",met:"Curtidas",v:217000},
@@ -314,7 +315,25 @@ const sM="Abril"; // hero always shows last month
 
 function nc(n){return dk?NCD[n]||"#888":NCL[n]||"#888"}
 function gv(r,m,met){const d=DATA.find(x=>x.r===r&&x.m===m&&x.met===met);return d?d.v:0}
-function gMets(r){return[...new Set(DATA.filter(x=>x.r===r).map(x=>x.met))]}
+function gMets(r){
+  const base=[...new Set(DATA.filter(x=>x.r===r).map(x=>x.met))];
+  // Inject computed metric for Instagram after Interações
+  if(r==="Instagram"&&base.includes("Interações")&&base.includes("Contas alcançadas")){
+    const idx=base.indexOf("Interações");
+    if(!base.includes("Taxa de interações"))base.splice(idx+1,0,"Taxa de interações");
+  }
+  return base;
+}
+// Get values for a metric — handles computed metrics
+function getVals(n,met){
+  if(met==="Taxa de interações"){
+    return MONTHS.map(m=>{
+      const inter=gv(n,m,"Interações"),reach=gv(n,m,"Contas alcançadas");
+      return reach>0?inter/reach:0;
+    });
+  }
+  return MONTHS.map(m=>gv(n,m,met));
+}
 function cmb(m){return NETS.reduce((s,n)=>s+gv(n,m,"Seguidores"),0)}
 function dlt(r,m){const i=MONTHS.indexOf(m);if(i<=0)return null;const p=MONTHS[i-1],c=gv(r,m,"Seguidores"),o=gv(r,p,"Seguidores");if(!o)return null;return((c-o)/o*100).toFixed(1)}
 function cDlt(m){const i=MONTHS.indexOf(m);if(i<=0)return null;return((cmb(m)-cmb(MONTHS[i-1]))/cmb(MONTHS[i-1])*100).toFixed(1)}
@@ -323,6 +342,7 @@ function cDltVsFirst(m){const f=MONTHS[0];if(m===f)return null;const c=cmb(m),o=
 
 function fmtN(n,met){
   if(met&&(met.toLowerCase().includes("receita")||met.toLowerCase().includes("usd")))return"US$\u00a0"+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(met&&met.toLowerCase().includes("taxa de interações"))return(n*100).toFixed(2)+"%";
   if(met&&met.toLowerCase().includes("taxa"))return(n*100).toFixed(1)+"%";
   if(n>=1e6){const s=n/1e6;return(s>=10?s.toFixed(1):s.toFixed(3)).replace(".",",")+"\u202fM"}
   if(n>=1e5)return(n/1e3).toFixed(0)+"K";
@@ -330,7 +350,9 @@ function fmtN(n,met){
   return n.toLocaleString("pt-BR")
 }
 function fmtA(n,met){
-  if(met&&(met.toLowerCase().includes("receita")||met.toLowerCase().includes("usd")))return"US$"+n.toFixed(0);
+  // Receita: no US$, just number with thousand separator
+  if(met&&(met.toLowerCase().includes("receita")||met.toLowerCase().includes("usd")))return n.toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:0});
+  if(met&&met.toLowerCase().includes("taxa de interações"))return(n*100).toFixed(2)+"%";
   if(met&&met.toLowerCase().includes("taxa"))return(n*100).toFixed(1)+"%";
   if(n>=1e9)return(n/1e9).toFixed(1)+"B";
   if(n>=1e6)return(n/1e6).toFixed(1)+"M";
@@ -339,7 +361,9 @@ function fmtA(n,met){
   return n.toLocaleString("pt-BR")
 }
 function fmtL(n,met){
-  if(met&&(met.toLowerCase().includes("receita")||met.toLowerCase().includes("usd")))return"US$"+n.toFixed(0);
+  // Receita: no US$, just number with thousand separator
+  if(met&&(met.toLowerCase().includes("receita")||met.toLowerCase().includes("usd")))return n.toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:0});
+  if(met&&met.toLowerCase().includes("taxa de interações"))return(n*100).toFixed(2)+"%";
   if(met&&met.toLowerCase().includes("taxa"))return(n*100).toFixed(1)+"%";
   if(n>=1e6){const s=n/1e6;return(s>=10?s.toFixed(1):s.toFixed(3))+"M"}
   if(n>=1e5)return(n/1e3).toFixed(0)+"K";
@@ -634,8 +658,9 @@ function bSocial(){
       const cid=`sc_${n.replace(/[^a-zA-Z]/g,"_")}_${met.replace(/[^a-zA-Z]/g,"_")}`;
       setTimeout(()=>{
         const el=document.getElementById(cid);if(!el)return;
-        const vals=MONTHS.map(m=>gv(n,m,met));
+        const vals=getVals(n,met);
         const maxV=Math.max(...vals),minV=Math.min(...vals),range=maxV-minV;
+        const isReceita=met.toLowerCase().includes("receita")||met.toLowerCase().includes("usd");
         sCI[cid]=new Chart(el,{
           type:"line",
           data:{labels:MONTHS,datasets:[{
@@ -650,7 +675,13 @@ function bSocial(){
             plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmtN(ctx.parsed.y,met)}`}}},
             scales:{
               x:{grid:{color:gc},ticks:{color:tc,font:{family:"DM Sans",size:9}}},
-              y:{grid:{color:gc},ticks:{color:tc,font:{family:"DM Sans",size:9},callback:v=>fmtA(v,met)},grace:"18%",suggestedMin:minV-range*0.15}
+              y:{
+                grid:{color:gc},
+                ticks:{color:tc,font:{family:"DM Sans",size:9},callback:v=>fmtA(v,met)},
+                grace:"18%",
+                suggestedMin:minV-range*0.15,
+                title:isReceita?{display:true,text:"USD",color:tc,font:{size:9}}:undefined
+              }
             }
           },
           plugins:[{id:"lbl_"+cid,afterDatasetsDraw(ch){
